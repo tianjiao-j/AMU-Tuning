@@ -1,0 +1,6 @@
+*.pth.tar
+caches/
+moco_checkpoints/
+result/
+.idea/
+__pycache__/
