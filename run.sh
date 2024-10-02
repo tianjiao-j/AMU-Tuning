@@ -1,8 +1,8 @@
-CUDA_VISIBLE_DEVICES=7 python train.py\
-    --rand_seed 2 \
+CUDA_VISIBLE_DEVICES=0 python train.py\
+    --rand_seed 1 \
     --torch_rand_seed 1\
     --exp_name test_16_shot  \
-    --clip_backbone "ViT-B-16" \
+    --clip_backbone "RN50" \
     --augment_epoch 1 \
     --alpha 0.5\
     --lambda_merge 0.35\
@@ -10,5 +10,5 @@ CUDA_VISIBLE_DEVICES=7 python train.py\
     --lr 1e-3\
     --batch_size 8\
     --shots 16\
-    --root_path 'your root path' \
-    --load_aux_weight \
+    --root_path '../Tip-Adapter/data/imagenet' \
+    --load_aux_weight

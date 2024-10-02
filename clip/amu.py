@@ -1,8 +1,9 @@
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize
+
+ica_components = torch.load('caches/ImageNet/ica_component_1024_50shots.pt').cuda()
 
 def logit_normalize(logit):
     logits_std = torch.std(logit, dim=1, keepdim=True)
@@ -82,7 +83,9 @@ class AMU_Model(nn.Module):
     def __init__(self, clip_model, aux_model, sample_features, clip_weights, feat_dim, class_num, lambda_merge, alpha,  uncent_type, uncent_power):
         super().__init__()
         self.clip_model = clip_model
-        self.aux_model = aux_model
+        # self.aux_model = aux_model
+        # self.aux_model = nn.Linear(feat_dim, feat_dim, bias=False)
+        # self.aux_model.weight = nn.Parameter(torch.eye(feat_dim))
         self.clip_weights = clip_weights
         self.aux_adapter = Linear_Adapter(feat_dim, class_num, sample_features=sample_features)
         
@@ -132,7 +135,7 @@ class AMU_Model(nn.Module):
         # CLIP branch
         clip_features =self.clip_model.encode_image(tfm_clip(images))
         # AUX branch
-        aux_feature = self.aux_model(tfm_aux(images))
+        aux_feature = self.clip_model.encode_image(tfm_clip(images)).to(torch.float32) @ ica_components.T
         return clip_features, aux_feature
     
     def forward_adapter(self, clip_features, aux_features):

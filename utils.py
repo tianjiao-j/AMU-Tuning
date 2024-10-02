@@ -83,8 +83,11 @@ def load_aux_weight(args, model, train_loader_cache, tfm_norm):
         torch.save(aux_labels, args.cache_dir + f'/aux_labels_' + str(args.shots) + "shots.pt")
 
     else:
-        aux_features = torch.load(args.cache_dir + f'/aux_feature_' + str(args.shots) + "shots.pt")
-        aux_labels = torch.load(args.cache_dir + f'/aux_labels_' + str(args.shots) + "shots.pt")
+        # aux_features = torch.load(args.cache_dir + f'/aux_feature_' + str(args.shots) + "shots.pt")
+        # aux_labels = torch.load(args.cache_dir + f'/aux_labels_' + str(args.shots) + "shots.pt")
+        aux_features = torch.load('caches/ImageNet/ica_keys_1024_16shots.pt').T
+        aux_labels = torch.load('caches/ImageNet/values_16shots.pt')
+        aux_labels = torch.argmax(aux_labels, dim=1)
     return aux_features, aux_labels
 
 def load_test_features(args, split, model, loader, tfm_norm, model_name):

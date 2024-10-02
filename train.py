@@ -11,6 +11,8 @@ from clip.moco import load_moco
 from clip.amu import *
 from parse_args import parse_args
 
+ica_components = torch.load('caches/ImageNet/ica_component_1024_50shots.pt').cuda()
+
 def freeze_bn(m):
     classname = m.__class__.__name__
     if classname.find('BatchNorm') != -1:
@@ -91,6 +93,20 @@ if __name__ == '__main__':
 # Load config file
     parser = parse_args()
     args = parser.parse_args()
+
+    args.rand_seed = 1
+    args.torch_rand_seed = 1
+    args.shots = 16
+    args.clip_backbone = 'RN50'
+    args.lambda_merge = 0.35
+    args.alpha = 0.5
+    args.augment_epoch = 1
+    args.lr = 1e-3
+    args.batch_size = 8
+    args.root_path = '../Tip-Adapter/data/imagenet'
+    args.train_epoch = 20
+    args.exp_name = 'AMU'
+    args.load_aux_weight = True
     
     cache_dir = os.path.join('./caches', args.dataset)
     os.makedirs(cache_dir, exist_ok=True)
@@ -106,7 +122,7 @@ if __name__ == '__main__':
     clip_model, preprocess = clip.load(args.clip_backbone)
     clip_model.eval()
     # AUX MODEL 
-    aux_model, args.feat_dim = load_moco("")#Aux model path
+    aux_model, args.feat_dim = load_moco("moco_checkpoints/r-50-100ep.pth.tar")   #Aux model path
         
     aux_model.cuda()
     aux_model.eval() 
@@ -137,7 +153,9 @@ if __name__ == '__main__':
     test_clip_features, test_labels  = load_test_features(args, "test", clip_model, test_loader, tfm_norm=tfm_clip, model_name='clip')
     
     logger.info(f"Loading AUX test feature.")
-    test_aux_features, test_labels = load_test_features(args, "test", aux_model, test_loader, tfm_norm=tfm_aux, model_name='aux')
+    # test_aux_features, test_labels = load_test_features(args, "test", aux_model, test_loader, tfm_norm=tfm_aux, model_name='aux')
+    test_aux_features = torch.load('caches/ImageNet/test_f.pt').to(torch.float32) @ ica_components.T
+    test_labels = torch.load('caches/ImageNet/test_l.pt')
     
     test_clip_features = test_clip_features.cuda()
     test_aux_features = test_aux_features.cuda()
@@ -148,6 +166,7 @@ if __name__ == '__main__':
     print(f"{l.argmax(dim=-1).eq(test_labels.cuda()).sum().item()}/ {len(test_labels)} = {l.argmax(dim=-1).eq(test_labels.cuda()).sum().item()/len(test_labels) * 100:.2f}%")
     
     # build amu-model
+    args.feat_dim = 1024
     model = AMU_Model(
         clip_model=clip_model,
         aux_model=aux_model,
