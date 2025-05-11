@@ -85,4 +85,9 @@ def parse_args():
                     default=0.4,
                     help='uncertainty fusion power'
                     )
+    parser.add_argument('--moco_ep',
+                        type=int,
+                        default=100,
+                        help='moco pretraining epochs'
+                        )
     return parser

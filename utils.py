@@ -6,31 +6,35 @@ from tqdm import tqdm
 import clip
 import torch
 import torch.nn.functional as F
-from torchvision.transforms import Compose, Normalize, Resize, CenterCrop, ToTensor, RandomResizedCrop, RandomHorizontalFlip
-
+from torchvision.transforms import Compose, Normalize, Resize, CenterCrop, ToTensor, RandomResizedCrop, \
+    RandomHorizontalFlip
 
 try:
     from torchvision.transforms import InterpolationMode
+
     BICUBIC = InterpolationMode.BICUBIC
 except ImportError:
     BICUBIC = Image.BICUBIC
 
+
 def _convert_image_to_rgb(image):
     return image.convert("RGB")
 
+
 tfm_train_base = Compose([
-            RandomResizedCrop(size=224, scale=(0.5, 1), interpolation=BICUBIC),
-            RandomHorizontalFlip(p=0.5),
-            ToTensor()
-            ]
-        )
+    RandomResizedCrop(size=224, scale=(0.5, 1), interpolation=BICUBIC),
+    RandomHorizontalFlip(p=0.5),
+    ToTensor()
+]
+)
 
 tfm_test_base = Compose([
-        Resize(224, interpolation=BICUBIC),
-        CenterCrop(224),
-        _convert_image_to_rgb,
-        ToTensor(),
-    ])
+    Resize(224, interpolation=BICUBIC),
+    CenterCrop(224),
+    _convert_image_to_rgb,
+    ToTensor(),
+])
+
 
 def cls_acc(output, target, topk=1):
     pred = output.topk(topk, 1, True, True)[1].t()
@@ -38,6 +42,7 @@ def cls_acc(output, target, topk=1):
     acc = float(correct[: topk].reshape(-1).float().sum(0, keepdim=True).cpu().numpy())
     acc = 100 * acc / target.shape[0]
     return acc
+
 
 def gpt_clip_classifier(classnames, clip_model, template):
     with torch.no_grad():
@@ -57,6 +62,7 @@ def gpt_clip_classifier(classnames, clip_model, template):
         clip_weights = torch.stack(clip_weights, dim=1).cuda()
     return clip_weights
 
+
 def load_aux_weight(args, model, train_loader_cache, tfm_norm):
     if args.load_aux_weight == False:
         aux_features = []
@@ -73,10 +79,10 @@ def load_aux_weight(args, model, train_loader_cache, tfm_norm):
                         target = target.cuda()
                         aux_labels.append(target)
                 aux_features.append(torch.cat(aux_features_current, dim=0).unsqueeze(0))
-         
+
         aux_features = torch.cat(aux_features, dim=0).mean(dim=0).cuda()
         aux_features /= aux_features.norm(dim=-1, keepdim=True)
-        
+
         aux_labels = torch.cat(aux_labels).cuda()
 
         torch.save(aux_features, args.cache_dir + f'/aux_feature_' + str(args.shots) + "shots.pt")
@@ -87,6 +93,7 @@ def load_aux_weight(args, model, train_loader_cache, tfm_norm):
         aux_labels = torch.load(args.cache_dir + f'/aux_labels_' + str(args.shots) + "shots.pt")
     return aux_features, aux_labels
 
+
 def load_test_features(args, split, model, loader, tfm_norm, model_name):
     if args.load_pre_feat == False:
         features, labels = [], []
@@ -94,7 +101,7 @@ def load_test_features(args, split, model, loader, tfm_norm, model_name):
             for i, (images, target) in enumerate(tqdm(loader)):
                 images, target = images.cuda(), target.cuda()
                 if hasattr(model, 'encode_image') and callable(getattr(model, 'encode_image')):
-                    image_features = model.encode_image(tfm_norm(images)) # for clip model
+                    image_features = model.encode_image(tfm_norm(images))  # for clip model
                 else:
                     image_features = model(tfm_norm(images))
                 features.append(image_features)
@@ -104,11 +111,12 @@ def load_test_features(args, split, model, loader, tfm_norm, model_name):
         features = features.cuda()
         torch.save(features, args.cache_dir + f"/{model_name}_" + split + "_f.pt")
         torch.save(labels, args.cache_dir + f"/{model_name}_" + split + "_l.pt")
-        
+
     else:
         features = torch.load(args.cache_dir + f"/{model_name}_" + split + "_f.pt")
         labels = torch.load(args.cache_dir + f"/{model_name}_" + split + "_l.pt")
     return features, labels
+
 
 def config_logging(args):
     logger = logging.getLogger()  # root logger
@@ -129,4 +137,4 @@ def config_logging(args):
 
     logger.addHandler(ch)
     logger.addHandler(fh)
-    return logger 
+    return logger

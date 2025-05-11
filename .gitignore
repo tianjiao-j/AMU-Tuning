@@ -2,5 +2,6 @@
 caches/
 moco_checkpoints/
 result/
+exp/
 .idea/
 __pycache__/

@@ -191,7 +191,7 @@ class ImageNet():
     def __init__(self, root, num_shots):
         # 注：这里不再接受preprocess参数
         self.dataset_dir = os.path.join(root, self.dataset_dir)
-        self.image_dir = os.path.join(self.dataset_dir, 'images')
+        self.image_dir = os.path.join(self.dataset_dir, 'imagenet/images')
 
         train_preprocess = tfm_train_base
         test_preprocess = tfm_test_base

@@ -8,8 +8,8 @@ template = ['a photo of a {}, a type of aircraft.']
 
 class FGVCAircraft(DatasetBase):
 
-    #dataset_dir = 'fgvc_aircraft'
-    dataset_dir = "FGVCAircraft/fgvc-aircraft-2013b/data"
+    dataset_dir = 'fgvc_aircraft'
+    #dataset_dir = "FGVCAircraft/fgvc-aircraft-2013b/data"
 
     def __init__(self, root, num_shots):
         
